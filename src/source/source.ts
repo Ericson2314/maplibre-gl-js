@@ -5,7 +5,9 @@ import {GeoJSONSource, type GeoJSONSourceShouldReloadTileOptions} from '../sourc
 import {VideoSource} from '../source/video_source.ts';
 import {ImageSource} from '../source/image_source.ts';
 import {CanvasSource} from '../source/canvas_source.ts';
+import {DifferenceSource} from '../source/difference_source.ts';
 import {GeoJSONLayersSource} from '../source/geojson_layers_source.ts';
+import {UnionSource} from '../source/union_source.ts';
 
 import type {CalculateTileZoomFunction} from '../geo/projection/covering_tiles.ts';
 import type {Dispatcher} from '../util/dispatcher.ts';
@@ -180,6 +182,10 @@ const getSourceType = (name: string): SourceClass => {
             return CanvasSource;
         case 'geojson-layers':
             return GeoJSONLayersSource;
+        case 'union':
+            return UnionSource;
+        case 'difference':
+            return DifferenceSource;
     }
     return registeredSources[name];
 };

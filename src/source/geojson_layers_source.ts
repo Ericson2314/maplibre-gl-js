@@ -9,6 +9,7 @@ import type {Tile} from '../tile/tile.ts';
 import type {Actor} from '../util/actor.ts';
 import type {SourceEventType} from '../ui/events.ts';
 import type {PromoteIdSpecification} from '@maplibre/maplibre-gl-style-spec';
+import type {VectorLeaf} from './combinator.ts';
 import type {CombinatorDefinition} from './combinator_worker.ts';
 
 /**
@@ -20,7 +21,7 @@ export type GeoJSONLayersSourceSpecification = {
     type: 'geojson-layers';
     /** The GeoJSON of each layer, keyed by the layer's name. */
     data: Record<string, GeoJSON.GeoJSON>;
-    /** The maximum zoom the GeoJSON is tiled at; by default 18. */
+    /** The maximum zoom the GeoJSON is tiled at; by default that of the source it is combined with, or 18. */
     maxzoom?: number;
     /** As for a `geojson` source. */
     buffer?: number;
@@ -32,7 +33,8 @@ export type GeoJSONLayersSourceSpecification = {
 
 /**
  * The source of the `geojson-layers` source type, GeoJSON by layer
- * ({@link GeoJSONLayersSourceSpecification}).
+ * ({@link GeoJSONLayersSourceSpecification}), which can also be an operand of the `union` and
+ * `difference` source types.
  *
  * @example
  * ```ts
@@ -60,7 +62,9 @@ export class GeoJSONLayersSource extends Evented<SourceEventType> implements Sou
     map: Map;
     actorPromise: Promise<Actor>;
     _options: GeoJSONLayersSourceSpecification;
+    _leaves: VectorLeaf[];
     _definition: CombinatorDefinition;
+    _request: AbortController;
     _loaded: boolean;
 
     constructor(id: string, options: GeoJSONLayersSourceSpecification, dispatcher: Dispatcher, eventedParent: Evented) {
@@ -76,7 +80,8 @@ export class GeoJSONLayersSource extends Evented<SourceEventType> implements Sou
         this.promoteId = options.promoteId;
         this.attribution = options.attribution;
         this._options = extend({}, options);
-        this._definition = toDefinition(options, this.tileSize);
+        this._leaves = [];
+        this._definition = toDefinition(options, this._leaves, id, this.tileSize);
         this._loaded = false;
         this.actorPromise = dispatcher.getActor();
         this.setEventedParent(eventedParent);

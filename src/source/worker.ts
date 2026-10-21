@@ -5,7 +5,9 @@ import {RasterDEMTileWorkerSource} from './raster_dem_tile_worker_source.ts';
 import {setProjectionHandler} from './projection_handler_worker.ts';
 import {rtlWorkerPlugin, type RTLTextPlugin} from './rtl_text_plugin_worker.ts';
 import {GeoJSONWorkerSource, type LoadGeoJSONParameters} from './geojson_worker_source.ts';
+import {DifferenceWorkerSource} from './difference_worker_source.ts';
 import {GeoJSONLayersWorkerSource} from './geojson_layers_worker_source.ts';
+import {UnionWorkerSource} from './union_worker_source.ts';
 import {isWorker} from '../util/util.ts';
 import {addProtocol, removeProtocol} from './protocol_crud.ts';
 import {makeRequest} from '../util/ajax.ts';
@@ -172,7 +174,7 @@ export default class Worker {
         });
 
         this.actor.registerMessageHandler(MessageType.setCombinatorDefinition, (mapId: string, params: SetCombinatorDefinitionParameters) => {
-            return (this._getWorkerSource(mapId, params.type, params.source) as GeoJSONLayersWorkerSource).setDefinition(params);
+            return (this._getWorkerSource(mapId, params.type, params.source) as DifferenceWorkerSource | GeoJSONLayersWorkerSource | UnionWorkerSource).setDefinition(params);
         });
 
         this.actor.registerMessageHandler(MessageType.loadTile, (mapId: string, params: WorkerTileParameters) => {
@@ -310,6 +312,12 @@ export default class Worker {
                     break;
                 case 'geojson-layers':
                     this.workerSources[mapId][sourceType][sourceName] = new GeoJSONLayersWorkerSource(actor, this._getLayerIndex(mapId), this._getAvailableImages(mapId));
+                    break;
+                case 'union':
+                    this.workerSources[mapId][sourceType][sourceName] = new UnionWorkerSource(actor, this._getLayerIndex(mapId), this._getAvailableImages(mapId));
+                    break;
+                case 'difference':
+                    this.workerSources[mapId][sourceType][sourceName] = new DifferenceWorkerSource(actor, this._getLayerIndex(mapId), this._getAvailableImages(mapId));
                     break;
                 default:
                     this.workerSources[mapId][sourceType][sourceName] = new (this.externalWorkerSourceTypes[sourceType])(actor, this._getLayerIndex(mapId), this._getAvailableImages(mapId));
